@@ -31,9 +31,9 @@ for nome, grupo in df_filtrado.groupby('Nome'):
     if datas:
         texto_datas = "\n".join(datas)
         mensagem = (
-            f"Olá {nome}, poderia justificar as suas horas extras dos seguintes dias:\n"
-            f"{texto_datas}\n\n"
-            "Atenciosamente,\nGestão de Ponto"
+            f"Olá {nome},\n\n"
+            f"Identifiquei que seu registro de horas extras necessita de justificativa para os seguintes dias:\n"
+            f"{texto_datas}\n"
         )
         mensagens.append({
             'Nome': nome,
