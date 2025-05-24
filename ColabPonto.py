@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Carregar o arquivo Excel, considerando que os cabeçalhos estão na linha 4 (índice 3)
-df = pd.read_excel("C:\\Users\\felip\\Desktop\\testeponto.xlsx", header=3)
+df = pd.read_excel("C:\\Users\\felip\\Desktop\\testeponto2.xlsx", header=3)
 
 # Exibir os nomes das colunas para verificar o índice correto
 print("Colunas originais:", df.columns)
@@ -51,8 +51,3 @@ print(df_filtrado)
 
 # Salvar o resultado em um novo arquivo Excel (se necessário)
 df_filtrado.to_excel("C:\\Users\\felip\\Desktop\\ponto_faltantes.xlsx", index=False)
-
-
-
-
-
