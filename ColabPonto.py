@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Carregar o arquivo Excel, considerando que os cabeçalhos estão na linha 4 (índice 3)
-df = pd.read_excel("C:\\Users\\felip\\Desktop\\testeponto2.xlsx", header=3)
+df = pd.read_excel("C:\\Users\\felip\\Desktop\\testeponto3.xlsx", header=3)
 
 # Exibir os nomes das colunas para verificar o índice correto
 print("Colunas originais:", df.columns)
@@ -67,18 +67,36 @@ for colaborador, group in df_filtrado.groupby('Colaborador'):
 
 df_mensagens = pd.DataFrame(mensagens)
 
-# Configurar a mensagem personalizável
-mensagem_base = "Prezado {colaborador},\n\nVerificamos que seu registro de ponto está incompleto nos seguintes dias: {datas}.\nPor favor, regularize esta situação o mais breve possível.\n\nAtenciosamente,\nGestão de Ponto"
+# Configurar a mensagem personalizável com quebras de linha para cada data
+mensagem_base = """Prezado {colaborador},
 
-# Aplicar a mensagem personalizada
+Verificamos que seu registro de ponto está incompleto nos seguintes dias:
+{datas}
+
+Por favor, regularize esta situação o mais breve possível.
+
+Atenciosamente,
+Gestão de Ponto"""
+
+# Aplicar a mensagem personalizada com formatação das datas
 df_mensagens['Mensagem'] = df_mensagens.apply(
-    lambda row: mensagem_base.format(colaborador=row['Colaborador'], datas=row['Datas Faltantes']), 
+    lambda row: mensagem_base.format(
+        colaborador=row['Colaborador'],
+        datas='\n'.join(f"- {data}" for data in row['Datas Faltantes'].split(', '))
+    ), 
     axis=1
 )
 
 # Criar um arquivo Excel com duas abas
-with pd.ExcelWriter("C:\\Users\\felip\\Desktop\\ponto_faltantes.xlsx") as writer:
-    df_filtrado.to_excel(writer, sheet_name='Registros Faltantes', index=False)
-    df_mensagens.to_excel(writer, sheet_name='Mensagens', index=False)
-
-print("Processo concluído. Arquivo gerado com duas abas.")
+try:
+    with pd.ExcelWriter("C:\\Users\\felip\\Desktop\\ponto_faltantes.xlsx", mode='w') as writer:
+        df_filtrado.to_excel(writer, sheet_name='Registros Faltantes', index=False)
+        df_mensagens.to_excel(writer, sheet_name='Mensagens', index=False)
+    print("Processo concluído. Arquivo gerado com duas abas.")
+except PermissionError:
+    print("ERRO: Não foi possível salvar o arquivo. Por favor:")
+    print("1. Feche o arquivo ponto_faltantes.xlsx se estiver aberto")
+    print("2. Verifique as permissões da pasta")
+    print("3. Tente um nome diferente para o arquivo de saída")
+except Exception as e:
+    print(f"Ocorreu um erro inesperado: {str(e)}")
