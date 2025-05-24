@@ -6,6 +6,12 @@ df = pd.read_excel("C:\\Users\\felip\\Desktop\\testeponto2.xlsx", header=3)
 # Exibir os nomes das colunas para verificar o índice correto
 print("Colunas originais:", df.columns)
 
+# Lista de termos a serem filtrados
+termos_remover = ["TOTAIS", "Resumo", "Horas extras acumuladas 50%", "Horas extras acumuladas 100%"]
+
+# Filtrar linhas que contêm esses termos na primeira coluna
+df = df[~df.iloc[:, 0].astype(str).str.contains('|'.join(termos_remover), na=False)]
+
 df["Colaborador"] = None  
 
 # Variável para armazenar o nome atual do colaborador
@@ -16,12 +22,13 @@ for index, row in df.iterrows():
     if "Colaborador" in str(row[0]):  # Se a palavra "Colaborador" estiver na primeira coluna
         colaborador_atual = row[1]  # Captura o nome do colaborador da coluna B
         df.at[index, "Colaborador"] = colaborador_atual  # Define o nome na mesma linha
-    
     else:
         df.at[index, "Colaborador"] = colaborador_atual  # Preenche as linhas subsequentes com o nome do colaborador atual
 
+# Remover linhas que contêm "Colaborador" na primeira coluna
 df = df[~df.iloc[:, 0].astype(str).str.contains("Colaborador", na=False)]
 
+# Reordenar colunas
 colunas_ordenadas = ["Colaborador"] + [col for col in df.columns if col != "Colaborador"]
 df = df[colunas_ordenadas]
 
@@ -46,8 +53,32 @@ df_filtrado = df[filtro_geral | filtro_sabado]
 # Remover a coluna auxiliar "Preenchidos"
 df_filtrado = df_filtrado.drop(columns=["Preenchidos"])
 
-# Exibir o resultado
-print(df_filtrado)
+# Criar DataFrame para as mensagens
+mensagens = []
 
-# Salvar o resultado em um novo arquivo Excel (se necessário)
-df_filtrado.to_excel("C:\\Users\\felip\\Desktop\\ponto_faltantes.xlsx", index=False)
+# Agrupar por colaborador e coletar as datas
+for colaborador, group in df_filtrado.groupby('Colaborador'):
+    datas = group['Data'].tolist()
+    mensagens.append({
+        'Colaborador': colaborador,
+        'Datas Faltantes': ', '.join(datas),
+        'Quantidade de Dias': len(datas)
+    })
+
+df_mensagens = pd.DataFrame(mensagens)
+
+# Configurar a mensagem personalizável
+mensagem_base = "Prezado {colaborador},\n\nVerificamos que seu registro de ponto está incompleto nos seguintes dias: {datas}.\nPor favor, regularize esta situação o mais breve possível.\n\nAtenciosamente,\nGestão de Ponto"
+
+# Aplicar a mensagem personalizada
+df_mensagens['Mensagem'] = df_mensagens.apply(
+    lambda row: mensagem_base.format(colaborador=row['Colaborador'], datas=row['Datas Faltantes']), 
+    axis=1
+)
+
+# Criar um arquivo Excel com duas abas
+with pd.ExcelWriter("C:\\Users\\felip\\Desktop\\ponto_faltantes.xlsx") as writer:
+    df_filtrado.to_excel(writer, sheet_name='Registros Faltantes', index=False)
+    df_mensagens.to_excel(writer, sheet_name='Mensagens', index=False)
+
+print("Processo concluído. Arquivo gerado com duas abas.")
